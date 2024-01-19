@@ -33,7 +33,6 @@ add_executable(main
                  ./src/blockchain.cpp
                  ./src/utils.h
                  ./src/utils.cpp
-                 ./include/cista.h
 )
 
 target_link_libraries(main PRIVATE sha2 leveldb cereal) #链接静态库
