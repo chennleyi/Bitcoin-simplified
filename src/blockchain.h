@@ -6,6 +6,8 @@
 #define BLOCKCHAIN_H_
 #include <vector>
 #include <string>
+#include <leveldb/db.h>
+
 class Block;
 class Blockchain{
 public:

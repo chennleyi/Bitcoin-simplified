@@ -2,6 +2,10 @@
 #include "proofofwork.h"
 #include "spdlog/spdlog.h"
 #include "utils.h"
+#include <cereal/types/string.hpp>
+#include <cereal/archives/binary.hpp>
+#include <fstream>
+#include <sstream>
 #include <memory>
 #include <string>
 
@@ -33,6 +37,24 @@ std::string Block::getHash() const {
 
 std::int64_t Block::getNonce() const {
     return nonce;
+}
+
+std::string cerealBlock(Block b) {
+    std::stringstream ss; 
+    {
+        cereal::BinaryOutputArchive oarchive(ss); 
+        oarchive(b); // Write the data to the archive
+    }
+    return ss.str();
+}
+
+Block decerealBlock(std::string info) {
+    Block b;
+    std::stringstream dd;
+    dd << info;
+    cereal::BinaryInputArchive oarchive(dd); 
+    oarchive(b); // Write the data to the archive        
+    return b;
 }
 
 Block newBlock(std::string data, std::string prevBlockHash) {
