@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.0)   #设置cmake最低版本
 project(bitcoin)                      #设置项目名称
 set(CMAKE_CXX_STANDARD 17)            #设置C++版本
+set(CMAKE_CXX_FLAGS "-lgmp")          #添加C++编译flag
 include_directories(libs)             #将给定的目录添加到编译器用于搜索包含文件的目录中。相对路径被解释为相对于当前源目录。
 include_directories(include)
 
@@ -20,6 +21,13 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(cereal) #获取cereal库
 
 
+FetchContent_Declare(
+    cxxopts
+    GIT_REPOSITORY https://github.com/jarro2783/cxxopts.git
+    GIT_TAG v3.1.0
+)
+FetchContent_MakeAvailable(cxxopts) #获取cxxopts库
+
 add_library(sha2 STATIC libs/sha256/SHA256.h libs/sha256/SHA256.cpp) #生成静态库
 
 
@@ -35,4 +43,4 @@ add_executable(main
                  ./src/utils.cpp
 )
 
-target_link_libraries(main PRIVATE sha2 leveldb cereal) #链接静态库
+target_link_libraries(main PRIVATE sha2 leveldb cereal cxxopts ${CMAKE_CXX_FLAGS}) #链接静态库

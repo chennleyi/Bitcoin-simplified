@@ -10,6 +10,8 @@ class Block{
 public:
     Block(time_t, std::string, std::string);
     Block() = default;
+    Block(const Block& );
+    Block& operator=(const Block& other);
     void setHash(std::string);
     void setNonce(int64_t);
     time_t getTimestamp() const;
@@ -17,8 +19,6 @@ public:
     std::string getPrevBlockHash() const;
     std::string getHash() const;
     std::int64_t getNonce() const;
-    std::string cerealBlock(Block b);
-    Block decerealBlock(std::string info);
 
     template<class Archive>
     void serialize(Archive& archive){
@@ -34,4 +34,6 @@ private:
 
 Block newGenesisBlock();
 Block newBlock(std::string data, std::string prevBlockHash);
+std::string cerealBlock(Block b);
+Block decerealBlock(std::string info);
 #endif

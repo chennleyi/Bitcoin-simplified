@@ -1,15 +1,34 @@
 #include "block.h"
 #include "proofofwork.h"
-#include "spdlog/spdlog.h"
 #include "utils.h"
 #include <cereal/types/string.hpp>
 #include <cereal/archives/binary.hpp>
-#include <fstream>
 #include <sstream>
 #include <memory>
 #include <string>
+#include <iostream>
 
 Block::Block(time_t time, std::string data, std::string prevBlockHash):timestamp(time), data(data), prevBlockHash(prevBlockHash) {}
+
+Block:: Block(const Block& other){
+    this->data = other.getData();
+    this->hash = other.getHash();
+    this->nonce = other.getNonce();
+    this->timestamp = other.getTimestamp();
+    this->prevBlockHash = other.getPrevBlockHash();
+}
+
+Block& Block::operator=(const Block& other)
+{
+    if (this != &other) {
+        this->data = other.getData();
+        this->hash = other.getHash();
+        this->nonce = other.getNonce();
+        this->timestamp = other.getTimestamp();
+        this->prevBlockHash = other.getPrevBlockHash();      
+    }
+    return *this;
+}
 
 void Block::setHash(std::string _hash){
     this->hash = _hash;
@@ -45,6 +64,7 @@ std::string cerealBlock(Block b) {
         cereal::BinaryOutputArchive oarchive(ss); 
         oarchive(b); // Write the data to the archive
     }
+    // std::cout<<ss.str()<<std::endl;
     return ss.str();
 }
 
@@ -53,7 +73,7 @@ Block decerealBlock(std::string info) {
     std::stringstream dd;
     dd << info;
     cereal::BinaryInputArchive oarchive(dd); 
-    oarchive(b); // Write the data to the archive        
+    oarchive(b); // Write the data to the archive 
     return b;
 }
 
@@ -62,12 +82,12 @@ Block newBlock(std::string data, std::string prevBlockHash) {
     Proofofwork p(b);
     b.setHash(p.getHash());
     b.setNonce(p.getNonce());
-    spdlog::info("data: {}, prev hash: {}, hash: {}", data, prevBlockHash, b.getHash());
+    // spdlog::info("data: {}, prev hash: {}, hash: {}", data, prevBlockHash, b.getHash());
     return b;
 }
 
 Block newGenesisBlock() {
-    Block b(getUnixTime(), "first block generated", "59f7a1c5a50e20b59d772242729577c715ab6900712f70f0434b44141fffa456");
+    Block b(getUnixTime(), "first block generated", "0");
     b.setHash("59f7a1c5a50e20b59d772242729577c715ab6900712f70f0434b44141fffa456");
     return b;
 }
