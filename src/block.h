@@ -1,39 +1,45 @@
-//
-// Created by Chenleyi on 2024/01/16
-//
-
 #ifndef BLOCK_H_
 #define BLOCK_H_
+#include "transaction.h"
+#include <vector>
 #include <string>
 #include <cstdint>
+
+
 class Block{
+private:
+    time_t timestamp{0};
+    std::string prevBlockHash{""};
+    std::string hash{""};
+    int64_t nonce{0};
 public:
-    Block(time_t, std::string, std::string);
+    std::vector<Transaction> transactions{};
+public:
+    Block(time_t time, std::vector<Transaction> trans, std::string prevblockhash);
     Block() = default;
-    Block(const Block& );
-    Block& operator=(const Block& other);
+    
     void setHash(std::string);
     void setNonce(int64_t);
+
+    std::string HashTransaction() const;
     time_t getTimestamp() const;
-    std::string getData() const;
     std::string getPrevBlockHash() const;
     std::string getHash() const;
     std::int64_t getNonce() const;
 
+    
     template<class Archive>
     void serialize(Archive& archive){
-        archive(timestamp, data, prevBlockHash, hash, nonce);
+        archive(timestamp, prevBlockHash, hash, nonce, transactions);
     }
-private:
-    time_t timestamp;
-    std::string data;
-    std::string prevBlockHash;
-    std::string hash;
-    int64_t nonce;
+
+
 };
 
-Block newGenesisBlock();
-Block newBlock(std::string data, std::string prevBlockHash);
+Block newGenesisBlock(Transaction& coinbase);
+Block newBlock(std::vector<Transaction>& trans, std::string prevBlockHash);
 std::string cerealBlock(Block b);
 Block decerealBlock(std::string info);
+
+
 #endif

@@ -4,20 +4,16 @@
 #include "utils.h"
 #include <cstdint>
 #include <string>
-#include <spdlog/spdlog.h>
 #include <limits>
 #include <gmpxx.h>
 
 Proofofwork:: Proofofwork(Block& b){
-    std::string data = std::to_string(b.getTimestamp()) + b.getData() + b.getPrevBlockHash();
+    
+    std::string data = std::to_string(b.getTimestamp()) + b.HashTransaction() + b.getPrevBlockHash();
     
     mpz_init(number);
-
-    // 设置初始数字
     mpz_set_ui(number, 1);
-
-    // 左移 232 位
-    mpz_mul_2exp(number, number, 235);
+    mpz_mul_2exp(number, number, 250);
 
     while(true){
         mpz_t hashNumber;

@@ -1,34 +1,16 @@
 #include "block.h"
 #include "proofofwork.h"
 #include "utils.h"
-#include <cereal/types/string.hpp>
-#include <cereal/archives/binary.hpp>
 #include <sstream>
 #include <memory>
 #include <string>
 #include <iostream>
+#include <cereal/types/string.hpp>
+#include <cereal/archives/binary.hpp>
+#include <cereal/types/vector.hpp>
 
-Block::Block(time_t time, std::string data, std::string prevBlockHash):timestamp(time), data(data), prevBlockHash(prevBlockHash) {}
 
-Block:: Block(const Block& other){
-    this->data = other.getData();
-    this->hash = other.getHash();
-    this->nonce = other.getNonce();
-    this->timestamp = other.getTimestamp();
-    this->prevBlockHash = other.getPrevBlockHash();
-}
-
-Block& Block::operator=(const Block& other)
-{
-    if (this != &other) {
-        this->data = other.getData();
-        this->hash = other.getHash();
-        this->nonce = other.getNonce();
-        this->timestamp = other.getTimestamp();
-        this->prevBlockHash = other.getPrevBlockHash();      
-    }
-    return *this;
-}
+Block::Block(time_t time, std::vector<Transaction> trans, std::string prevblockhash):timestamp(time), transactions(trans), prevBlockHash(prevblockhash) {}
 
 void Block::setHash(std::string _hash){
     this->hash = _hash;
@@ -46,10 +28,6 @@ std::string Block::getPrevBlockHash() const {
     return prevBlockHash;
 }
 
-std::string Block::getData() const {
-    return data;
-}
-
 std::string Block::getHash() const {
     return hash;
 }
@@ -58,13 +36,21 @@ std::int64_t Block::getNonce() const {
     return nonce;
 }
 
+
+std::string Block::HashTransaction() const {
+    std::string total = "";
+    for(auto& transaction: transactions){
+        total += transaction.id;
+    }
+    return getSha2(total);
+}
+
 std::string cerealBlock(Block b) {
     std::stringstream ss; 
     {
         cereal::BinaryOutputArchive oarchive(ss); 
         oarchive(b); // Write the data to the archive
     }
-    // std::cout<<ss.str()<<std::endl;
     return ss.str();
 }
 
@@ -77,17 +63,18 @@ Block decerealBlock(std::string info) {
     return b;
 }
 
-Block newBlock(std::string data, std::string prevBlockHash) {
-    Block b(getUnixTime(), data, prevBlockHash);
+Block newBlock(std::vector<Transaction>& trans, std::string prevBlockHash) {
+    Block b(getUnixTime(), trans, prevBlockHash);
     Proofofwork p(b);
     b.setHash(p.getHash());
     b.setNonce(p.getNonce());
-    // spdlog::info("data: {}, prev hash: {}, hash: {}", data, prevBlockHash, b.getHash());
     return b;
 }
 
-Block newGenesisBlock() {
-    Block b(getUnixTime(), "first block generated", "0");
-    b.setHash("59f7a1c5a50e20b59d772242729577c715ab6900712f70f0434b44141fffa456");
+Block newGenesisBlock(Transaction& coinbase) {
+    Block b(getUnixTime(), std::vector<Transaction>{coinbase}, "0");
+    Proofofwork p(b);
+    b.setHash(p.getHash());
+    b.setNonce(p.getNonce());
     return b;
 }

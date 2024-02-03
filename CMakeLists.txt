@@ -2,6 +2,11 @@ cmake_minimum_required(VERSION 3.0)   #设置cmake最低版本
 project(bitcoin)                      #设置项目名称
 set(CMAKE_CXX_STANDARD 17)            #设置C++版本
 set(CMAKE_CXX_FLAGS "-lgmp")          #添加C++编译flag
+
+SET(CMAKE_BUILD_TYPE "Debug")
+SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g2 -ggdb")
+SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
+
 include_directories(libs)             #将给定的目录添加到编译器用于搜索包含文件的目录中。相对路径被解释为相对于当前源目录。
 include_directories(include)
 
@@ -37,6 +42,8 @@ add_executable(main
                  ./src/block.cpp 
                  ./src/proofofwork.h
                  ./src/proofofwork.cpp
+                 ./src/transaction.h
+                 ./src/transaction.cpp
                  ./src/blockchain.h
                  ./src/blockchain.cpp
                  ./src/utils.h
