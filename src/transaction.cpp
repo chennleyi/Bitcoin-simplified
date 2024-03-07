@@ -116,3 +116,4 @@ Transaction NewUTXOTransaction(std::string from, std::string to, int amount, Blo
     tx.setId();
     return tx;
 }
+

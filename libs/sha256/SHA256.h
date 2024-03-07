@@ -3,7 +3,7 @@
 
 #include <string>
 #include <array>
-
+namespace UTILS{
 class SHA256 {
 
 public:
@@ -48,5 +48,5 @@ private:
 	void pad();
 	void revert(std::array<uint8_t, 32> & hash);
 };
-
+}
 #endif

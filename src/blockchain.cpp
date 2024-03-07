@@ -172,6 +172,23 @@ void Blockchain::Send(std::string from, std::string to, int amount){
     (*this).mineBlock(arr);
 }
 
+Transaction Blockchain::FindTx(std::string txid){
+    std::string currentHash = tip;
+    while(true){
+        std::string value;
+        db->Get(leveldb::ReadOptions(), blocksBucket+currentHash, &value); 
+        Block b = decerealBlock(value);
+        for(auto& tx: b.transactions){
+            if(tx.id == txid){
+                return tx;
+            }
+        }
+        if(b.getPrevBlockHash() == "0"){
+            break;
+        }
+    }
+    throw std::runtime_error("Couldn't find the specific tx");
+}
 
 Blockchain::~Blockchain(){
     delete db;

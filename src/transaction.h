@@ -13,6 +13,7 @@ private:
     std::string txid;
     int vout;
     std::string scriptSig;
+    std::string pubkey;
 
 public:
     TxInput(std::string t, int v, std::string s):txid(t),vout(v),scriptSig(s){}
@@ -35,7 +36,7 @@ public:
 class TxOutput{
 private:
     int value;
-    std::string scriptPubkey;
+    std::string pubkeyHash;
 public:       
     TxOutput(int val, std::string scriptpubkey):value(val), scriptPubkey(scriptpubkey){}
     TxOutput() = default; 

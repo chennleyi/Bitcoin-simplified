@@ -18,6 +18,7 @@ struct SpendableOutput{
     std::map<std::string, std::vector<int>> smap;
 };
 
+
 class Blockchain{
 public:
     Blockchain(std::string addr);
@@ -30,10 +31,10 @@ public:
 
     void printChain();
     void GetBalance(std::string addr) const;
+    Transaction FindTx(std::string txid);
 private:
     std::string tip;
     leveldb::DB* db = nullptr;
 };
-
 
 #endif

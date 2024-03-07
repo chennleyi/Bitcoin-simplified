@@ -41,5 +41,4 @@ Block newBlock(std::vector<Transaction>& trans, std::string prevBlockHash);
 std::string cerealBlock(Block b);
 Block decerealBlock(std::string info);
 
-
 #endif
