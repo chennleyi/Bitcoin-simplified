@@ -11,6 +11,14 @@ std::string getSha2(std::string text){
     return UTILS::SHA256::toString(sha2.digest());
 }
 
+std::vector<uint8_t> sha256(const std::string &data) {
+    SHA256_CTX ctx;
+    SHA256_Init(&ctx);
+    SHA256_Update(&ctx, data.c_str(), data.length());
+    std::vector<uint8_t> hash(SHA256_DIGEST_LENGTH);
+    SHA256_Final(hash.data(), &ctx);
+    return hash;
+}
 
 time_t getUnixTime(){
     std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
@@ -18,58 +26,58 @@ time_t getUnixTime(){
 }
 
 
-std::tuple<std::vector<uint8_t>, bool> HashText(const std::string &text) {
-  std::vector<uint8_t> md;
+// std::tuple<std::vector<uint8_t>, bool> HashText(const std::string &text) {
+//   std::vector<uint8_t> md;
 
-  std::stringstream input(text);
+//   std::stringstream input(text);
 
-  // Hash file contents
-  SHA512_CTX ctx;
-  SHA512_Init(&ctx);
+//   // Hash file contents
+//   SHA512_CTX ctx;
+//   SHA512_Init(&ctx);
 
-  // Reading...
-  char buff[BUFF_SIZE];
-  while (!input.eof()) {
-    input.read(buff, BUFF_SIZE);
-    size_t buff_size = input.gcount();
-    SHA512_Update(&ctx, buff, buff_size);
-  }
+//   // Reading...
+//   char buff[BUFF_SIZE];
+//   while (!input.eof()) {
+//     input.read(buff, BUFF_SIZE);
+//     size_t buff_size = input.gcount();
+//     SHA512_Update(&ctx, buff, buff_size);
+//   }
 
-  // Get md buffer.
-  md.resize(SHA512_DIGEST_LENGTH);
-  SHA512_Final(md.data(), &ctx);
+//   // Get md buffer.
+//   md.resize(SHA512_DIGEST_LENGTH);
+//   SHA512_Final(md.data(), &ctx);
 
-  return std::make_tuple(md, true);
-}
-
-
-std::tuple<std::vector<uint8_t>, bool> Signing(std::shared_ptr<ecdsa::Key> pkey, const std::string &path) {
-  std::vector<uint8_t> signature;
-  std::vector<uint8_t> md;
-  bool succ;
-  std::tie(md, succ) = HashText(path);
-  if (!succ) {
-    return std::make_tuple(signature, false);
-  }
-  std::tie(signature, succ) = pkey->Sign(md);
-  if (!succ) {
-    std::cerr << "Cannot signing file!" << std::endl;
-    return std::make_tuple(signature, false);
-  }
-
-  return std::make_tuple(signature, true);
-}
+//   return std::make_tuple(md, true);
+// }
 
 
-bool Verifying(const ecdsa::PubKey &pub_key, const std::string &path, const std::vector<uint8_t> &signature) {
-  std::vector<uint8_t> md;
-  bool succ;
-  std::tie(md, succ) = HashText(path);
-  if (succ) {
-    return pub_key.Verify(md, signature);
-  }
-  return false;
-}
+// std::tuple<std::vector<uint8_t>, bool> Signing(std::shared_ptr<ecdsa::Key> pkey, const std::string &path) {
+//   std::vector<uint8_t> signature;
+//   std::vector<uint8_t> md;
+//   bool succ;
+//   std::tie(md, succ) = HashText(path);
+//   if (!succ) {
+//     return std::make_tuple(signature, false);
+//   }
+//   std::tie(signature, succ) = pkey->Sign(md);
+//   if (!succ) {
+//     std::cerr << "Cannot signing file!" << std::endl;
+//     return std::make_tuple(signature, false);
+//   }
+
+//   return std::make_tuple(signature, true);
+// }
+
+
+// bool Verifying(const ecdsa::PubKey &pub_key, const std::string &path, const std::vector<uint8_t> &signature) {
+//   std::vector<uint8_t> md;
+//   bool succ;
+//   std::tie(md, succ) = HashText(path);
+//   if (succ) {
+//     return pub_key.Verify(md, signature);
+//   }
+//   return false;
+// }
 
 
 std::string BinaryToHexString(const unsigned char *bin_data, size_t size, bool is_little_endian) {

@@ -5,15 +5,20 @@
 class Wallet
 {
 private:
-    std::unique_ptr<ecdsa::Key> pkey;
+  ecdsa::Key key;
 public:
-    Wallet(){
-        pkey = std::make_unique<ecdsa::Key>();
+    Wallet(const char* privKeyBase58){
+      std::vector<uint8_t> privKeyData;
+      base58::DecodeBase58(std::string(privKeyBase58),privKeyData);
+      key.set_priv_key_data(privKeyData);
     }
+    Wallet() = default;
     std::string GetAddress() const;
     std::string GetPrivateKey() const;
-    std::string GetPrivateKeyHex() const;
     std::string GetPubKey() const;
+    std::string Sign(std::string message);
+    bool Verify(std::string message, std::string sig);
+    
 };
 
 #endif

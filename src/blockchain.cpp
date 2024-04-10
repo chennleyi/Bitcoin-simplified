@@ -2,13 +2,12 @@
 #include "block.h"
 #include "proofofwork.h"
 #include "transaction.h"
-#include "spdlog/spdlog.h"
 #include <unordered_map>
 #include <vector>
 #include <stdexcept>
 #include <iostream>
 #include <string>
-
+#include <iostream>
 
 void storeDataInBucket(leveldb::DB* db, const std::string& bucketName, const std::string& key, const std::string& value) {
     std::string prefixedKey = bucketName + key;
@@ -29,6 +28,9 @@ bool hasKeyWithPrefix(leveldb::DB* db, const std::string& prefix) {
 // Success!
 void Blockchain::mineBlock(std::vector<Transaction> transactions){
     std::string x;
+    for(auto＆ tx: transactions){
+        
+    }
     if(hasKeyWithPrefix(db, blocksBucket) == true){
         leveldb::ReadOptions readOptions;
         leveldb::Status readStatus = db->Get(readOptions, blocksBucket+"1", &x);
@@ -48,16 +50,16 @@ void Blockchain::mineBlock(std::vector<Transaction> transactions){
 Blockchain:: Blockchain(std::string addr){
     leveldb::Options options;  
     options.create_if_missing = true;
-    leveldb::Status status = leveldb::DB::Open(options, "/learn/cpp/Bitcoin-simplified/data/testdb", &db);
+    leveldb::Status status = leveldb::DB::Open(options, "/home/runner/Xiang-Mu/Bitcoin-simplified/data/testdb", &db);
     if(false == status.ok()){
-        spdlog::warn("open failure");
+        std::cout<<"open failure";
         throw std::runtime_error("g");
     }
     if(hasKeyWithPrefix(db, blocksBucket) == false){
-        spdlog::info("No blockchain existed, create a new one");
+        std::cout<<"No blockchain existed, create a new one";
         auto cbtx = NewCoinbaseTx(addr, std::string("The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"));
         auto genesis = newGenesisBlock(cbtx);
-        spdlog::info("Mining the Genesis block\n\nSUCESS!!!\n\n");
+        std::cout<<"Mining the Genesis block\n\nSUCESS!!!\n\n";
         storeDataInBucket(db, blocksBucket, genesis.getHash(), cerealBlock(genesis));
         storeDataInBucket(db, blocksBucket, "1", genesis.getHash());
         tip = genesis.getHash();
@@ -74,9 +76,8 @@ void Blockchain:: printChain(){
         std::string value;
         db->Get(leveldb::ReadOptions(), blocksBucket+currentHash, &value);
         Block b = decerealBlock(value);
-        spdlog::info("Prev hash: {}", b.getPrevBlockHash());
-        spdlog::info("Hash: {}", b.getHash());
-        spdlog::info("Timestamp: {}\n\n\n", b.getTimestamp());
+        std::cout<<"Prev hash: "<<b.getPrevBlockHash();
+
         currentHash = b.getPrevBlockHash();
         if(b.getPrevBlockHash() == "0")
             break;
@@ -89,20 +90,16 @@ SpendableOutput Blockchain::FindUnspentOutput(std::string address) const
     SpendableOutput s;
     std::string currentHash = tip;
     bool requirement = false;
-    // std::cout<<"-----------------------------\n";
+    std::unordered_map<std::string, std::vector<int>> umap;
     while(true){
         std::string value;
         db->Get(leveldb::ReadOptions(), blocksBucket+currentHash, &value); 
         Block b = decerealBlock(value);
-        // 遍历tx
         for(auto tx: b.transactions){
-            // 遍历tx的outputs
             for(int i = 0; i < tx.txOutput.size(); ++i){
-                // 这个output被引用
-                if(s.smap.find(tx.id) != s.smap.end()){
-                    for(auto j: s.smap[tx.id]){
+                if(umap.find(tx.id) != umap.end()){
+                    for(auto j: umap[tx.id]){
                         if(i == j){
-                            // std::cout<<i<<" ";
                             goto START;
                         }
                     }
@@ -111,57 +108,27 @@ SpendableOutput Blockchain::FindUnspentOutput(std::string address) const
                     START:
                     continue;
                 }
-                // 没被引用加入
                 if(tx.txOutput[i].canBeUnlockedWith(address)){
                     s.smap[tx.id].push_back(i);
                     s.value += tx.txOutput[i].getValue();
-                    // std::cout<<"没有被引用： \n";
-                    // std::cout<<tx.id<<" add value : "<<i<<" "<<tx.txOutput[i].getValue()<<"; ";
                 }
-                // std::cout<<"\n";
             }
             if(tx.isCoinbase() != true){
                 for(auto input: tx.txInput){
-                    s.smap[input.getTxid()].push_back(input.getVout());
-                    // std::cout<<"被引用： \n";
-                    // std::cout<<input.getTxid()<<": "<<input.getVout()<<" ";
+                    umap[input.getTxid()].push_back(input.getVout());
                 }
-                // std::cout<<"\n";
             }
         }
         currentHash = b.getPrevBlockHash();
         if(b.getPrevBlockHash() == "0")
                 break;
     }
-    // std::cout<<"-----------------------------\n";
     return s;
 }
 
-// // vector中第一个数字是address有多少可用的value，剩余的是tx对应的ouput的indice
-// SpendableOutput Blockchain::FindSpendableOutput(std::string address, int amount) const {
-//     auto unspentTxs = FindUnspentOutput(address);
-//     SpendableOutput sOutputs;
-//     for(auto& tx: unspentTxs){
-//         int id = 0;
-//         for(auto& ouput: tx.txOutput){
-//             if(ouput.canBeUnlockedWith(address) && sOutputs.value < amount){
-//                 sOutputs.value += ouput.getValue();
-//                 sOutputs.smap[tx.id].push_back(id);
-//                 if(sOutputs.value >= amount)
-//                     goto OK;
-//             }
-//             id++;
-//         }
-//     }
-//     OK:
-//     return sOutputs;
-// }
-
-
-
-void Blockchain::GetBalance(std::string address) const{
+int Blockchain::GetBalance(std::string address) const{
     auto spent = FindUnspentOutput(address);
-    std::cout<<"The balance of "<<address<<" is "<<spent.value<<"\n";
+    return spent.value;
 }
 
 

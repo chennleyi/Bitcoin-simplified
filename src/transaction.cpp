@@ -25,7 +25,7 @@ const std::string& TxInput::getScriptSig() const{
 }
 
 bool TxOutput::canBeUnlockedWith(std::string data) const{
-    return data == scriptPubkey;
+    return data == pubkeyHash;
 }
 
 int TxOutput::getValue() const{
@@ -33,8 +33,13 @@ int TxOutput::getValue() const{
 }
 
 std::string TxOutput::getScriptPubKey() const{
-    return scriptPubkey;
+    return pubkeyHash;
 }
+
+const std::string& TxInput::getPubkey() const{
+  return pubkey;
+}
+
 
 bool Transaction::isCoinbase() const {
     return txInput.size() == 1 && txInput[0].getTxid() == "" && txInput[0].getVout() == -1;
@@ -89,11 +94,12 @@ Transaction NewCoinbaseTx(std::string to, std::string data)
  * 返回transaction
  * 
 */
-Transaction NewUTXOTransaction(std::string from, std::string to, int amount, Blockchain& bc)
+Transaction NewUTXOTransaction(Wallet& w, std::string to, int amount, Blockchain& bc)
 {
+    std::string pubkey = w.getPublicKey();
     std::vector<TxInput> txInputs;
     std::vector<TxOutput> txOutputs;
-    auto spendableOutput = bc.FindUnspentOutput(from);
+    auto spendableOutput = bc.FindUnspentOutput(pubkey);
     int total = spendableOutput.value;
     auto smap = spendableOutput.smap;
     if(spendableOutput.value < amount){
@@ -103,17 +109,59 @@ Transaction NewUTXOTransaction(std::string from, std::string to, int amount, Blo
         auto txid = it->first;
         auto outs = it->second;
         for(auto id: outs){
-            TxInput inputs(txid, id, from);
+            TxInput inputs(txid, id, pubkey);
             txInputs.push_back(inputs);
         }
     }
     txOutputs.push_back(TxOutput(amount, to));
     if(total > amount){
-        txOutputs.push_back(TxOutput(total-amount, from));
+        txOutputs.push_back(TxOutput(total-amount, pubkey));
     }
 
     Transaction tx(txInputs, txOutputs);
+    signTx(w, tx);
     tx.setId();
     return tx;
 }
+/**
+一个交易引用了很多个输入，很多个输出
+每个输入都要单独的sign, 输入里面有sig;
+针对每一个输入: txid, vout, pubkeyHash
+设置好后，生成该tx的txid, 再对txid的内容进行签名
+**/
+void signTx(Wallet& w, Transaction& tx){
+  auto trimmedTx = TrimmedTx(tx);
+  for(int i = 0; i < trimmedTx.txInput.size(); i++){
+    trimmedTx.txInput[i].pubkey = w.getPubKey();
+    trimmedTx.setId();
+    tx.txInput[i].scriptSig = w.sign(trimmedTx.id);
+    trimmedTx.txInput[i].pubkey = "";
+  } 
+}
 
+void verifyTx(Wallet& w, Transaction& t){
+  auto trimmedTx = TrimmedTx(tx);
+  for(int i = 0; i < trimmedTx.txInput.size(); i++){
+    trimmedTx.txInput[i].pubkey = w.getPubKey();
+    trimmedTx.setId();
+    if(!w.verify(trimmedTx.id, tx.txInput[i].scriptSig)){
+      throw std::runtime_error("Transaction is not valid!");
+    }
+    trimmedTx.txInput[i].pubkey = "";
+  } 
+}
+
+
+Transaction TrimmedTx(Transaction& tx){
+  std::vector<TxInput> txInputs;
+  std::vector<TxOutput> txOutputs;;
+  for(auto it = tx.txInput.begin(); it != tx.txInput.end(); it++){
+    TxInput txinput(it->getTxid(), it->getVout(), "");
+    txInputs.push_back(txinput);
+  }
+  for(auto it = tx.txOutput.begin(); it != tx.txOutput.end(); it++){
+    TxOutput txoutput(it->getValue(), it->getScriptPubKey());
+    txOutputs.push_back(txoutput);
+  }
+  return Transaction trimmedTx(txInputs, txOutputs);
+}

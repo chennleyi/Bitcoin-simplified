@@ -1,0 +1,52 @@
+#include <gtest/gtest.h>
+#include "wallet.h"
+#include "blockchain.h"
+#include "block.h"
+#include "proofofwork.h"
+#include "transaction.h"
+#include <iostream>
+#include <unistd.h>
+
+class TestFixture : public ::testing::Test {
+protected:
+    // 测试之前把数据库删除了，不然数据不好做验证
+    void SetUp() override {
+      std::string command = "rm -rf ../data/testdb";
+      system(command.c_str());
+    }
+};
+
+
+std::string message = "hello, world";
+ecdsa::Key key;
+std::vector<uint8_t> signature;
+bool succ;
+
+/**
+1 首先对数据进行哈希
+2 再签名
+**/
+// 签署消息
+TEST_F(TestFixture, signMessage){
+  std::tie(signature, succ) = key.Sign(sha256(message));
+  EXPECT_TRUE(succ);
+  std::cout<<base58::EncodeBase58(signature)<<"\n";
+}
+
+// 验证签名
+TEST_F(TestFixture, verifyMessage){
+  auto pub_key = key.CreatePubKey();
+  EXPECT_TRUE(pub_key.Verify(sha256(message), signature));
+}
+
+TEST_F(TestFixture, TestSendBalance) {
+  std::string myAddr = "cly";
+  std::string yAddr = "yzy";
+  std::string lAddr = "lt";
+  Blockchain bc(myAddr);
+  bc.Send(myAddr, lAddr, 4);
+  bc.Send(myAddr, yAddr, 2);
+  EXPECT_EQ(bc.GetBalance(myAddr), 4);
+  EXPECT_EQ(bc.GetBalance(lAddr), 4);
+  EXPECT_EQ(bc.GetBalance(yAddr), 2);
+}

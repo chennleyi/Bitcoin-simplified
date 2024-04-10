@@ -30,7 +30,7 @@ public:
     void Send(std::string from, std::string to, int amount);
 
     void printChain();
-    void GetBalance(std::string addr) const;
+    int GetBalance(std::string addr) const;
     Transaction FindTx(std::string txid);
 private:
     std::string tip;

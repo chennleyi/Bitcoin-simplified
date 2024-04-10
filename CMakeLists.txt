@@ -7,6 +7,8 @@ SET(CMAKE_BUILD_TYPE "Debug")
 SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g2 -ggdb")
 SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
 
+add_compile_options(-w)
+
 include_directories(libs)             #将给定的目录添加到编译器用于搜索包含文件的目录中。相对路径被解释为相对于当前源目录。
 include_directories(include)
 
@@ -25,6 +27,11 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(cereal) #获取cereal库
 
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
+)
+FetchContent_MakeAvailable(googletest)
 
 FetchContent_Declare(
     cxxopts
@@ -33,9 +40,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(cxxopts) #获取cxxopts库
 
-
-find_package(PkgConfig REQUIRED)
-pkg_search_module(OPENSSL REQUIRED openssl)
 
 if( OPENSSL_FOUND )
     include_directories(${OPENSSL_INCLUDE_DIRS})
@@ -46,31 +50,46 @@ endif()
 
 add_subdirectory(libs/ecdsa)
 
-# FetchContent_Declare(
-#     secp256k1
-#     GIT_REPOSITORY https://github.com/bitcoin-core/secp256k1.git
-#     GIT_TAG v0.4.1
-# )
-# FetchContent_MakeAvailable(secp256k1) #获取sep256k1库
+FetchContent_Declare(
+     secp256k1
+     GIT_REPOSITORY https://github.com/bitcoin-core/secp256k1.git
+     GIT_TAG v0.4.1
+)
+FetchContent_MakeAvailable(secp256k1) #获取sep256k1库
+
+FetchContent_Declare(
+     spdlog
+     GIT_REPOSITORY https://github.com/gabime/spdlog.git
+     GIT_TAG v1.x
+)
+FetchContent_MakeAvailable(spdlog) #spdlog
 
 add_library(sha2 STATIC libs/sha256/SHA256.h libs/sha256/SHA256.cpp) #生成静态库
 
 include_directories(include)
+include_directories(src)
 
-add_executable(main 
-                 ./src/main.cpp  # 编译成目标文件
-                #  ./src/block.h
-                #  ./src/block.cpp 
-                #  ./src/proofofwork.h
-                #  ./src/proofofwork.cpp
-                #  ./src/transaction.h
-                #  ./src/transaction.cpp
-                #  ./src/blockchain.h
-                #  ./src/blockchain.cpp
-                 ./src/utils.h
-                 ./src/utils.cpp
-                 ./src/wallet.h
-                 ./src/wallet.cpp
+enable_testing()
+
+add_executable(
+  hello_test
+  ./test/test.cpp
+  ./src/block.h
+  ./src/block.cpp 
+  ./src/proofofwork.h
+  ./src/proofofwork.cpp
+  ./src/transaction.h
+  ./src/transaction.cpp
+  ./src/blockchain.h
+  ./src/blockchain.cpp
+  ./src/utils.h
+  ./src/utils.cpp
+  ./src/wallet.h
+  ./src/wallet.cpp
+)
+target_link_libraries(
+  hello_test GTest::gtest_main sha2 ecdsa++ leveldb cereal cxxopts spdlog ${CMAKE_CXX_FLAGS} ${OPENSSL_LIBRARIES}
 )
 
-target_link_libraries(main PRIVATE sha2 ecdsa++ leveldb cereal cxxopts  ${CMAKE_CXX_FLAGS} ${OPENSSL_LIBRARIES}) #链接静态库
+include(GoogleTest)
+gtest_discover_tests(hello_test)

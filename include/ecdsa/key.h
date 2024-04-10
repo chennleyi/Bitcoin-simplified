@@ -38,6 +38,9 @@ class Key {
     return priv_key_data_;
   }
 
+  /// Set Prive Key data
+  void set_priv_key_data(const std::vector<uint8_t> &priv_key_data);
+
   /// Get public key data.
   const std::vector<uint8_t> &get_pub_key_data() const { return pub_key_data_; }
 
